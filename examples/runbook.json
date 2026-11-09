@@ -1,0 +1,19 @@
+{
+  "schema": "quorumops.runbook.v1",
+  "id": "demo-health-gate",
+  "description": "Confere a integridade do arquivo de saude e registra uma evidencia local",
+  "steps": [
+    {
+      "id": "health-assert",
+      "type": "assert_file",
+      "path": "health.txt",
+      "sha256": "aaecf73fde929a6d2d556835fe137c53855e277fbd609da54bb17041af398599"
+    },
+    {
+      "id": "write-proof",
+      "type": "record_marker",
+      "path": "completed.txt",
+      "text": "QuorumOps: demo executada com duas assinaturas validas"
+    }
+  ]
+}

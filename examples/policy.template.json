@@ -1,0 +1,8 @@
+{
+  "schema": "quorumops.policy.v1",
+  "requiredApprovals": 2,
+  "maxTtlSeconds": 3600,
+  "allowMarkers": true,
+  "commands": {},
+  "approvers": []
+}

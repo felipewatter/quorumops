@@ -1,0 +1,14 @@
+node_modules/
+.DS_Store
+coverage/
+.env
+.env.*
+*.private.pem
+*.approval.json
+*.receipt.json
+plan.json
+state/
+demo/
+keys/
+reports/
+*.tgz
