@@ -1,0 +1,84 @@
+name: CI - testes e release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quorumops-ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  tests:
+    name: Testes Node ${{ matrix.node }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Install from lockfile
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Syntax checks
+        run: npm run syntax
+      - name: Unit and security tests
+        run: npm test
+      - name: End-to-end smoke
+        run: npm run smoke
+      - name: Package manifest inspection
+        run: npm pack --dry-run
+
+  release:
+    name: Release após CI aprovado
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.repository == 'felipewatter/quorumops'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Publicar a versão apenas se HEAD ainda for o último commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTUAL_SHA="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$ACTUAL_SHA" != "$GITHUB_SHA" ]]; then
+            echo "HEAD avançou; release ficará a cargo da execução CI mais recente"
+            exit 0
+          fi
+          VERSION="$(node -p "JSON.parse(require('fs').readFileSync('package.json', 'utf8')).version")"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo 'Versão SemVer inválida'; exit 1; }
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG já existe; nenhuma alteração realizada"
+            exit 0
+          fi
+          ASSET="quorumops-${TAG}-source.zip"
+          git archive --format=zip --output="$ASSET" "$GITHUB_SHA"
+          sha256sum "$ASSET" > "${ASSET}.sha256"
+          gh release create "$TAG" "$ASSET" "${ASSET}.sha256" \
+            --target "$GITHUB_SHA" --title "QuorumOps ${TAG}" \
+            --notes-file RELEASE_NOTES.md --latest
