@@ -28,8 +28,8 @@ jobs:
           test -f .github/workflows/ci.yml
           test -f src/core.mjs
           test -f tests/quorumops.test.mjs
-          rm -f .github/workflows/bootstrap.yml
+          rm -f .github/workflows/ci.yml
           rm -rf bootstrap
           git add --all
-          git -c user.name='QuorumOps Automation' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: publish verified QuorumOps v1.0.0 source'
+          git -c user.name='QuorumOps Automation' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: import QuorumOps v1.0.0 runtime and documentation'
           git push origin HEAD:main
