@@ -1,0 +1,9 @@
+# Preserve byte-for-byte integrity for fixtures signed/hashed in runbooks.
+* text=auto
+*.txt text eol=lf
+*.json text eol=lf
+*.mjs text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ps1 text eol=crlf
