@@ -1,0 +1,35 @@
+name: Bootstrap validated QuorumOps source
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    if: github.repository == 'felipewatter/quorumops'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out controlled repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Verify archive, unpack and publish full source
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo '540a6d545866e215fc1cb408a60f4964a925eee694000c4a8829dd129698a4d0  bootstrap/quorumops-full.tar.xz' | sha256sum --check -
+          test ! -e package.json
+          tar -xJf bootstrap/quorumops-full.tar.xz
+          test -f package.json
+          test -f .github/workflows/ci.yml
+          test -f src/core.mjs
+          test -f tests/quorumops.test.mjs
+          rm -f .github/workflows/bootstrap.yml
+          rm -rf bootstrap
+          git add --all
+          git -c user.name='QuorumOps Automation' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'feat: publish verified QuorumOps v1.0.0 source'
+          git push origin HEAD:main
